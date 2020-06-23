@@ -651,7 +651,7 @@ uint32_t gpio_num_to_tim_2_5_channel(int gpio_num) {
     }
 #endif
 }
-
+//shaun. 实际设置的是PA0/1/2/3,为TIM5_CH1/2/3/4.
 void pwm_in_init() {
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;

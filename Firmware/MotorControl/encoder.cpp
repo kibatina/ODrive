@@ -6,6 +6,7 @@ Encoder::Encoder(const EncoderHardwareConfig_t& hw_config,
                 Config_t& config) :
         hw_config_(hw_config),
         config_(config)
+        //shaun. 构造函数在定义里面赋值. hw_config_这个指针指向hw_config, config_这个指针指向config.
 {
     update_pll_gains();
 
@@ -67,11 +68,11 @@ void Encoder::set_idx_subscribe(bool override_enable) {
         GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
     }
 }
-
+	
 void Encoder::update_pll_gains() {
     pll_kp_ = 2.0f * config_.bandwidth;  // basic conversion to discrete time
     pll_ki_ = 0.25f * (pll_kp_ * pll_kp_); // Critically damped
-
+		//shaun, pll估算的参数。
     // Check that we don't get problems with discrete time approximation
     if (!(current_meas_period * pll_kp_ < 1.0f)) {
         set_error(ERROR_UNSTABLE_GAIN);

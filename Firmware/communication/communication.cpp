@@ -84,10 +84,12 @@ void init_communication(void) {
     printf("hi!\r\n");
 
     // Start command handling thread
+    //shaun 创建任务
+    // 这里优先级才有7个.
     osThreadDef(task_cmd_parse, communication_task, osPriorityNormal, 0, 8000 /* in 32-bit words */); // TODO: fix stack issues
     comm_thread = osThreadCreate(osThread(task_cmd_parse), NULL);
 
-    while (!endpoint_list_valid)
+    while (!endpoint_list_valid)	//shaun. 通讯任务初始化后,usb就有endpoint,也就valid了.
         osDelay(1);
 }
 

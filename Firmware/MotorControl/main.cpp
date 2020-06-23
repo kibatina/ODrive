@@ -161,6 +161,9 @@ int odrive_main(void) {
 
     // Construct all objects.
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
+				//shaun. 我觉得第一个Encoder是类的类型,第二个Encoder是类的析构函数.
+				//使用new运算符创建一块堆中空间，它的大小由类Encoder的数据成员的类型和数量，并同时用构造函数初始化。
+				//一个new实现这么多功能.
         Encoder *encoder = new Encoder(hw_configs[i].encoder_config,
                                        encoder_configs[i]);
         SensorlessEstimator *sensorless_estimator = new SensorlessEstimator(sensorless_configs[i]);
