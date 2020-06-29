@@ -111,9 +111,12 @@ bool Controller::update(float pos_estimate, float vel_estimate, float* current_s
     if (config_.control_mode == CTRL_MODE_TRAJECTORY_CONTROL) {
         // Note: uint32_t loop count delta is OK across overflow
         // Beware of negative deltas, as they will not be well behaved due to uint!
+        //shaun: current_meas_period=0.000125
+        //shaun: 每次update,loop_counter_++
         float t = (axis_->loop_counter_ - traj_start_loop_count_) * current_meas_period;
         if (t > axis_->trap_.Tf_) {
             // Drop into position control mode when done to avoid problems on loop counter delta overflow
+            // shaun: traj结束.
             config_.control_mode = CTRL_MODE_POSITION_CONTROL;
             // pos_setpoint already set by trajectory
             vel_setpoint_ = 0.0f;
@@ -122,8 +125,11 @@ bool Controller::update(float pos_estimate, float vel_estimate, float* current_s
             TrapezoidalTrajectory::Step_t traj_step = axis_->trap_.eval(t);
             pos_setpoint_ = traj_step.Y;
             vel_setpoint_ = traj_step.Yd;
+						//shaun: Ydd是加速度,这里做了转换.不过A_per_css还没明确定义.而且加速度暂时也是用不到的.
+						//shaun: current_setpoint_这个变量应该后面会被重新配置.
             current_setpoint_ = traj_step.Ydd * axis_->trap_.config_.A_per_css;
         }
+				//shaun: TODO
         anticogging_pos = pos_setpoint_; // FF the position setpoint instead of the pos_estimate
     }
 
