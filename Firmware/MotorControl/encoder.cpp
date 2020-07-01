@@ -305,6 +305,10 @@ bool Encoder::update() {
             //or use 64 bit
             //shaun: shadow_count_应该是历史数据.
             //shaun: tim_cnt_sample_是直接读取TIM的count.
+            //shaun: 作为encoder的TIM并没有CPR=8196而把TIM的period设置为8195.而是固定0xFFFF，满量程。
+            //shaun: 这里挺有意思的.shadow_count_通过int16变为int32,就可以保留历史信息,不会因为int16过界而回到0.
+            //shaun: 也就是说如果这个tim是个32bit的timer,那么其count就已知是position,不需要任何的转变.
+            //shaun: 前提是对tim的count满量程使用,不能16bit的用12bit,也不能32bit的用20bit之类的.
             int16_t delta_enc_16 = (int16_t)tim_cnt_sample_ - (int16_t)shadow_count_;
             delta_enc = (int32_t)delta_enc_16; //sign extend
         } break;
