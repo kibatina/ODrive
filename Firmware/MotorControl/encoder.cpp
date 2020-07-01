@@ -70,6 +70,7 @@ void Encoder::set_idx_subscribe(bool override_enable) {
 }
 	
 void Encoder::update_pll_gains() {
+		//shaun: bandwidth=1000,那么pll_kp_=2000,pll_ki_=1000000
     pll_kp_ = 2.0f * config_.bandwidth;  // basic conversion to discrete time
     pll_ki_ = 0.25f * (pll_kp_ * pll_kp_); // Critically damped
 		//shaun, pll估算的参数。
@@ -302,6 +303,8 @@ bool Encoder::update() {
         case MODE_INCREMENTAL: {
             //TODO: use count_in_cpr_ instead as shadow_count_ can overflow
             //or use 64 bit
+            //shaun: shadow_count_应该是历史数据.
+            //shaun: tim_cnt_sample_是直接读取TIM的count.
             int16_t delta_enc_16 = (int16_t)tim_cnt_sample_ - (int16_t)shadow_count_;
             delta_enc = (int32_t)delta_enc_16; //sign extend
         } break;
@@ -341,21 +344,28 @@ bool Encoder::update() {
     shadow_count_ += delta_enc;
     count_in_cpr_ += delta_enc;
     count_in_cpr_ = mod(count_in_cpr_, config_.cpr);
-
+		//shaun: count_in_cpr_ 倒是直接,明确在cpr范围内.
+		//shaun: shadow_count_还没理解.如果是历史数据,为啥不叫last
     //// run pll (for now pll is in units of encoder counts)
     // Predict current pos
     pos_estimate_ += current_meas_period * vel_estimate_;
     pos_cpr_      += current_meas_period * vel_estimate_;
     // discrete phase detector
+    //shaun: 把shadow_count_当成encoder产生的position.
     float delta_pos     = (float)(shadow_count_ - (int32_t)floorf(pos_estimate_));
     float delta_pos_cpr = (float)(count_in_cpr_ - (int32_t)floorf(pos_cpr_));
     delta_pos_cpr = wrap_pm(delta_pos_cpr, 0.5f * (float)(config_.cpr));
     // pll feedback
+    //shaun: pos_estimate_是最终使用的位置信息.
     pos_estimate_ += current_meas_period * pll_kp_ * delta_pos;
     pos_cpr_      += current_meas_period * pll_kp_ * delta_pos_cpr;
     pos_cpr_ = fmodf_pos(pos_cpr_, (float)(config_.cpr));
+		//shaun： vel_estimate_是最终使用的速度信息.
     vel_estimate_      += current_meas_period * pll_ki_ * delta_pos_cpr;
     bool snap_to_zero_vel = false;
+		//shaun: TODO,没看懂.
+		//shaun: current_meas_period=0.000125, pll_ki_=1000000. 0.5f * current_meas_period * pll_ki_= 62.5.
+		//shaun: 配置的cpr=8196,那么62.5count/s意味着 (62.5/8196)*60=0.475RPM。
     if (fabsf(vel_estimate_) < 0.5f * current_meas_period * pll_ki_) {
         vel_estimate_ = 0.0f; //align delta-sigma on zero to prevent jitter
         snap_to_zero_vel = true;
@@ -385,6 +395,9 @@ bool Encoder::update() {
     float elec_rad_per_enc = axis_->motor_.config_.pole_pairs * 2 * M_PI * (1.0f / (float)(config_.cpr));
     float ph = elec_rad_per_enc * (interpolated_enc - config_.offset_float);
     // ph = fmodf(ph, 2*M_PI);
+    //shaun: phase_是角度,还是电子角度.
+    //shaun: 如果编码器分辨率已经14bit也就是16384了,那么角度做插值意义不大.
+    //shaun: 对于低分辨率的编码器有意义.
     phase_ = wrap_pm_pi(ph);
 
     return true;

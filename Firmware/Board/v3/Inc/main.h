@@ -167,7 +167,7 @@
 
 //TODO: make this come automatically out of CubeMX somehow
 #define TIM_TIME_BASE TIM14
-
+//shaun: CURRENT_MEAS_PERIOD=0.000125
 #define CURRENT_MEAS_PERIOD ( (float)2*TIM_1_8_PERIOD_CLOCKS*(TIM_1_8_RCR+1) / (float)TIM_1_8_CLOCK_HZ )
 #define CURRENT_MEAS_HZ ( (float)(TIM_1_8_CLOCK_HZ) / (float)(2*TIM_1_8_PERIOD_CLOCKS*(TIM_1_8_RCR+1)) )
 

@@ -152,6 +152,7 @@ bool Controller::update(float pos_estimate, float vel_estimate, float* current_s
     if (config_.control_mode >= CTRL_MODE_POSITION_CONTROL) {
         float pos_err;
         if (config_.setpoints_in_cpr) {
+						//shaun: 这种应该是单圈运动的.不常用.
             // TODO this breaks the semantics that estimates come in on the arguments.
             // It's probably better to call a get_estimate that will arbitrate (enc vs sensorless) instead.
             float cpr = (float)(axis_->encoder_.config_.cpr);
@@ -161,8 +162,10 @@ bool Controller::update(float pos_estimate, float vel_estimate, float* current_s
             pos_err = pos_setpoint_ - axis_->encoder_.pos_cpr_;
             pos_err = wrap_pm(pos_err, 0.5f * cpr);
         } else {
+						//shaun: pos_setpoint_来自于traj, pos_estimate来自于encoder的pll估算.
             pos_err = pos_setpoint_ - pos_estimate;
         }
+				//shaun: 这个+=看起来怪怪的,其实就是正常的P放大，加上前馈。
         vel_des += config_.pos_gain * pos_err;
     }
 
@@ -180,6 +183,7 @@ bool Controller::update(float pos_estimate, float vel_estimate, float* current_s
     }
 
     // Velocity control
+    //shaun： 这个就是力矩前馈，实际力矩系数设置为0，那么就没有前馈。
     float Iq = current_setpoint_;
 
     // Anti-cogging is enabled after calibration
@@ -188,13 +192,16 @@ bool Controller::update(float pos_estimate, float vel_estimate, float* current_s
     if (anticogging_.use_anticogging) {
         Iq += anticogging_.cogging_map[mod(static_cast<int>(anticogging_pos), axis_->encoder_.config_.cpr)];
     }
-
+		//shaun： vel_estimate来自于于encoder里面的pll估算.
+		//shaun: 把模式的数字配置好,位置模式大于速度模式,速度模式大于力矩模式.倒是方便.
+		//shaun: P和I分开操作.
     float v_err = vel_des - vel_estimate;
     if (config_.control_mode >= CTRL_MODE_VELOCITY_CONTROL) {
         Iq += config_.vel_gain * v_err;
     }
 
     // Velocity integral action before limiting
+    //shaun: TODO， 那么岂不是CTRL_MODE_CURRENT_CONTROL的时候,这里还是执行的.
     Iq += vel_integrator_current_;
 
     // Current limiting
